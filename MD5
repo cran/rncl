@@ -1,9 +1,9 @@
-c2a55743e02c32b7d22af42e73e31fca *DESCRIPTION
+dd9c9572f90f5dd8afc64b0bf5292850 *DESCRIPTION
 4ef89086715e66af0e20962ccbcf61ef *LICENSE
-771cf66332037a451a6a42fb555cd068 *NAMESPACE
+4dfb77f187292555dd984923a3b90a04 *NAMESPACE
 22a80c250473f81553c52272a9844358 *R/RcppExports.R
 8683fa70148bff11867c588402be0624 *R/rncl-package.R
-c964a389f3a70ab0fd81c3544f798387 *R/rncl.R
+c1c0f17945123c75e14cdab15f23eb23 *R/rncl.R
 062bdeff268cfe48ca2cb8f3ed430fd7 *README.md
 c88f0e72152ce9ff4e5c224d891a9544 *cleanup
 90175fc56ee204e4ddd87a05c14ce9cb *inst/newick_bad/Gudrun.nex
@@ -19,8 +19,8 @@ f8225a526530eabfaa8ea117e2a82aae *inst/nexusfiles/co1.nex
 a6fdad8b8df8bdca481fa30b57a1b118 *inst/nexusfiles/multiLines.rds
 4d5d4d71cf83b54eed9811470482e8d2 *inst/nexusfiles/newick.tre
 4961bb5af89e1cfd63944af5d8ee8408 *inst/nexusfiles/treeWithUnderscoreLabels.nex
-c6c6495a04726b71512143f94e0606f6 *man/read_nexus_phylo.Rd
-0d3d6d372ad7c03c416dd71df426667c *man/rncl.Rd
+7f290cb1c5e7ea57fc8be48a5f9c2695 *man/read_nexus_phylo.Rd
+77e4ddf45a326f3b4d4a73b817dfd072 *man/rncl.Rd
 590a019abbacf80b1c38f85aa7c08b51 *src/GetNCL.cpp
 ed0d19722e28a7d316256f2c247be33e *src/Makevars
 1e0cc7f2ea27756865f63d6758ca90a8 *src/Makevars.win
