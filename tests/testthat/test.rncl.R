@@ -26,15 +26,20 @@ multiLinesFile <- file.path(pth, "MultiLineTrees.nex")
 ## Newick trees
 newick <- file.path(pth, "newick.tre")
 
-## Contains correct (as of 2014-11-29) phylo representation of one of the tree
-## stored in the nexus file
-mlFile <- file.path(pth, "multiLines.rds")
+## treeWithDiscreteData.nex -- Mesquite file with discrete data
+treeDiscDt <- file.path(pth, "treeWithDiscreteData.nex")
 
+## Nexus files where trees only contain subset of taxa listed in TAXA block
+taxsub <- file.path(pth, "test_subset_taxa.nex")
+
+## NEXUS file to test for underscores
+tr_under <- file.path(pth, "test_underscores.nex")
 
 stopifnot(file.exists(co1File))
 stopifnot(file.exists(multiLinesFile))
-stopifnot(file.exists(mlFile))
-
+stopifnot(file.exists(taxsub))
+stopifnot(file.exists(treeDiscDt))
+stopifnot(file.exists(tr_under))
 
 ## function (file, simplify=TRUE, type=c("all", "tree", "data"),
 ##   char.all=FALSE, polymorphic.convert=TRUE, levels.uniform=TRUE,
@@ -69,6 +74,8 @@ context("rncl can deal with simple NEXUS files (tree only)")
 test_that("file with 2 trees (warning normal)", {
     ## Read trees
     co1 <- read_nexus_phylo(file=co1File)
+    ## Check files are named
+    expect_equal(names(co1), c("con 50 majrule", "con 50 majrule"))
     ## Tree 1
     co1Tree1 <- co1[[1]]
     target_edgeLength <- unname(eLco1[paste(co1Tree1$edge[,1], co1Tree1$edge[,2], sep="-")])
@@ -97,7 +104,7 @@ test_that("readNCL can handle multi line files", {
     multiLines <- read_nexus_phylo(file=multiLinesFile)
     ## load correct representation and make sure that the trees read
     ## match it
-    ml <- readRDS(mlFile)
+    ml <- ape::read.nexus(file = multiLinesFile)
     expect_equal(multiLines[[1]], ml[[1]])
     expect_equal(multiLines[[2]], ml[[2]])
     rm(ml)
@@ -136,3 +143,81 @@ test_that("weird files",{
     expect_equal(tr2$node.label, "E")
     expect_equal(tr2$Nnode, 1)
 })
+
+############################################################################
+## missing edge lengths                                                   ##
+############################################################################
+
+test_that("file with missing edge lengths (default behavior)", {
+    expect_warning(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre")),
+                   "All removed")
+    expect_true(is.null(tr$edge.length))
+})
+
+test_that("file with missing edge lengths specify missing value", {
+    expect_warning(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre"),
+                                           missing_edge_length = -99),
+                   "replaced by")
+    expect_true(sum(tr$edge.length == -99) > 0)
+})
+
+test_that("missing_edge_length is a single numeric value", {
+    expect_error(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre"),
+                                           missing_edge_length = "test"),
+                 "single numerical value")
+    expect_error(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre"),
+                                           missing_edge_length = c(0, 1)),
+                 "single numerical value")
+    expect_error(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre"),
+                                           missing_edge_length = c(NA, 1)),
+                 "single numerical value")
+    expect_error(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre"),
+                                           missing_edge_length = c(TRUE)),
+                 "single numerical value")
+})
+
+############################################################################
+## Files where trees contain a subset of the taxa listed in TAXA block    ##
+############################################################################
+
+context("Tree with subset of taxa listed in TAXA block")
+
+test_that("taxa subset", {
+              expect_error(tr <- read_nexus_phylo(file = taxsub),
+                           "All the taxa listed")
+          })
+
+############################################################################
+## Test roundtrip with Myrmecus file                                      ##
+############################################################################
+
+context("Compare output from ape read file and phylobase")
+
+test_that("compare read.nexus and read_nexus_phylo", {
+            tr_ape <- ape::read.nexus(file = treeDiscDt)
+            tr_ph4 <- read_nexus_phylo(file = treeDiscDt)
+            expect_equal(tr_ape, tr_ph4)
+})
+
+############################################################################
+## Test spacesAsUnderscores                                               ##
+############################################################################
+
+context("test spacesAsUnderscores")
+
+test_that("spacesAsUnderscores is TRUE",  {
+              ncl <- rncl(file = tr_under, file.format = "nexus", spacesAsUnderscores = TRUE)
+              expect_true(any(grepl("\\_", ncl$taxaNames)))
+              expect_true(all(sapply(ncl$taxonLabelVector, function(x) any(grepl("_", x)))))
+              expect_true(any(grepl("_", ncl$charLabels)))
+              expect_true(any(grepl("_", ncl$stateLabels)))
+          })
+
+
+test_that("spacesAsUnderscores is FALSE",  {
+              ncl <- rncl(file = tr_under, file.format = "nexus", spacesAsUnderscores = FALSE)
+              expect_false(any(grepl("\\_", ncl$taxaNames)))
+              expect_false(all(sapply(ncl$taxonLabelVector, function(x) any(grepl("_", x)))))
+              expect_false(any(grepl("_", ncl$charLabels)))
+              expect_false(any(grepl("_", ncl$stateLabels)))
+          })
