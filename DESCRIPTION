@@ -1,6 +1,6 @@
 Package: rncl
 Title: An Interface to the Nexus Class Library
-Version: 0.4.0
+Version: 0.6.0
 Authors@R: c(person("Francois", "Michonneau", role=c("aut", "cre"),
     email="francois.michonneau@gmail.com"),
     person("Ben", "Bolker", role=c("aut")),
@@ -12,8 +12,8 @@ Description: An interface to the Nexus Class Library which allows parsing
     of NEXUS, Newick and other phylogenetic tree file formats. It provides
     elements of the file that can be used to build phylogenetic objects
     such as ape's 'phylo' or phylobase's 'phylo4(d)'.
-Imports: Rcpp (>= 0.11.0), ape
-Suggests: testthat
+Imports: Rcpp (>= 0.11.0)
+Suggests: testthat, ape
 LinkingTo: Rcpp
 Depends: R (>= 3.1.1)
 License: BSD_2_clause + file LICENSE
@@ -21,11 +21,11 @@ URL: https://github.com/fmichonneau/rncl
 BugReports: https://github.com/fmichonneau/rncl/issues
 LazyData: true
 NeedsCompilation: yes
-Packaged: 2015-07-09 14:44:12 UTC; francois
+Packaged: 2015-07-21 23:19:35 UTC; francois
 Author: Francois Michonneau [aut, cre],
   Ben Bolker [aut],
   Mark Holder [aut],
   Paul Lewis [aut],
   Brian O'Meara [aut]
 Repository: CRAN
-Date/Publication: 2015-07-09 18:11:38
+Date/Publication: 2015-07-22 05:55:13

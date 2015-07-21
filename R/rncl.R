@@ -49,9 +49,9 @@
 ##'
 ##' \itemize{
 ##'
-##'   \item {\code{taxaNames}} {A vector of the taxa names listed in the TAXA
-##' block of the NEXUS file or inferred from the tree strings (if
-##' block missing or Newick file).}
+##'   \item {\code{taxaNames}} {A vector of the taxa names listed in
+##' the TAXA block of the NEXUS file or inferred from the tree strings
+##' (if block missing or Newick file).}
 ##'
 ##'   \item {\code{treeNames}} {A vector listing the names of the trees}
 ##'
@@ -73,7 +73,7 @@
 ##' elements as there are trees in the file. Each element is a numeric
 ##' vector listing the edge/branch lengths for the edges in the same
 ##' order as nodes are listed in the corresponding \code{parentVector}
-##' element. Values of -1 indicate that the value is missing for this
+##' element. Values of -999 indicate that the value is missing for this
 ##' particular edge. The implicit root as a length of 0.}
 ##'
 ##'   \item{\code{nodeLabelsVector}} { A list containing as many
@@ -84,9 +84,9 @@
 ##'
 ##'   \item{\code{trees}} { A character vector listing the tree
 ##' strings where tip labels have been replaced by their indices in
-##' the \code{taxonLabelVector} vector. They do not correspond to the
-##' numbers listed in the translation table that might be associated
-##' with the tree.}
+##' the \code{taxaNames} vector. They do not correspond to the numbers
+##' listed in the translation table that might be associated with the
+##' tree.}
 ##'
 ##'   \item{\code{dataTypes}} { A character vector indicating the type
 ##' of data associated with the tree (e.g., \dQuote{standard}). }
@@ -167,16 +167,6 @@ rncl <- function(file, file.format = c("nexus", "newick"),
 
     }
 
-    ## in case the trees contain a subset of the taxa listed in the TAXA block
-    ## ideally, this should be fixed in the C++ code
-    any_subset <- sapply(ncl$taxonLabelVector, function(x) {
-                             length(setdiff(ncl$taxaNames, x))
-                         })
-    if (any(any_subset > 0)) {
-        stop("All the taxa listed in the TAXA block must also be found in",
-             " the tip labels of all the trees.")
-    }
-
     ncl
 }
 
@@ -190,10 +180,10 @@ get_edge_matrix <- function(parentVector) {
     edgeMat
 }
 
-## Returns the edge lengths (missing are represented by -1)
+## Returns the edge lengths (missing are represented by -999)
 get_edge_length <- function(branchLengthVector, parentVector) {
     edgeLgth <- branchLengthVector[which(parentVector != 0)]
-    edgeLgth[edgeLgth == -1] <- NA
+    edgeLgth[edgeLgth == -999] <- NA
     edgeLgth
 }
 
@@ -219,9 +209,9 @@ build_raw_phylo <- function(ncl, missing_edge_length) {
 
             edgeLgth <- get_edge_length(ncl$branchLength[[i]], ncl$parentVector[[i]])
 
-            nNodes <- length(ncl$parentVector[[i]]) - length(ncl$taxaNames)
+            tipLbl <- ncl$taxonLabelVector[[i]]
 
-            tipLbl <- ncl$taxaNames
+            nNodes <- length(ncl$parentVector[[i]]) - length(tipLbl)
 
             tr <- list(edge=edgeMat, tip.label=tipLbl, Nnode=nNodes)
 
@@ -246,10 +236,10 @@ build_raw_phylo <- function(ncl, missing_edge_length) {
             }
 
             if (has_node_labels(ncl$nodeLabelsVector[[i]])) {
-                ntips <- length(tr$tip.label)
                 ndLbl <- ncl$nodeLabelsVector[[i]]
                 ndLbl[rootNd] <- ndLbl[1]
-                tr <- c(tr, list(node.label=ndLbl[(ntips+1):length(ndLbl)]))
+                ndLbl <- ndLbl[min(tr$edge[, 1]):length(ndLbl)]
+                tr <- c(tr, list(node.label=ndLbl))
             }
 
             listTrees[[i]] <- tr
@@ -264,15 +254,19 @@ build_raw_phylo <- function(ncl, missing_edge_length) {
 ## polishes things up
 build_phylo <- function(ncl, simplify=FALSE, missing_edge_length) {
     trees <- build_raw_phylo(ncl, missing_edge_length)
-    trees <- lapply(trees, function(tr) {
-        tr <- ape::collapse.singles(tr)
-        class(tr) <- "phylo"
-        tr
-    })
-    if (length(trees) == 1 || simplify) {
-        trees <- trees[[1]]
-    } else {
-        class(trees) <- "multiPhylo"
+    if (!is.null(trees)) {
+        trees <- lapply(trees, function(tr) {
+                            if (any(tabulate(tr$edge[, 1]) == 1)) {
+                                tr <- collapse_singles(tr)
+                            }
+                            class(tr) <- "phylo"
+                            tr
+                        })
+        if (length(trees) == 1 || simplify) {
+            trees <- trees[[1]]
+        } else {
+            class(trees) <- "multiPhylo"
+        }
     }
     trees
 }
@@ -296,7 +290,7 @@ build_phylo <- function(ncl, simplify=FALSE, missing_edge_length) {
 ##' @author Francois Michonneau
 ##' @seealso rncl-package
 ##' @rdname read_nexus_phylo
-##' @note \code{make_phylo} will soon be deprecated , use
+##' @note \code{make_phylo} will soon be deprecated, use
 ##' \code{read_nexus_phylo} or \code{read_newick_phylo} instead.
 ##' @export
 
