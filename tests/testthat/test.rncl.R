@@ -5,13 +5,10 @@
 ### Get all the test files
 if (Sys.getenv("RCMDCHECK") == FALSE) {
     pth <- file.path(getwd(), "..", "inst", "nexusfiles")
+    pth_nw_good <- file.path(getwd(), "..", "inst", "newick_good")
+
 } else {
     pth <- system.file(package="rncl", "nexusfiles")
-}
-
-if (Sys.getenv("RCMDCHECK") == FALSE) {
-    pth_nw_good <- file.path(getwd(), "..", "inst", "newick_good")
-} else {
     pth_nw_good <- system.file(package="rncl", "newick_good")
 }
 
@@ -83,11 +80,13 @@ test_that("file with 2 trees (warning normal)", {
     ## Tree 1
     co1Tree1 <- co1[[1]]
     target_edgeLength <- unname(eLco1[paste(co1Tree1$edge[,1], co1Tree1$edge[,2], sep="-")])
+    expect_equal(typeof(co1Tree1$edge), "integer")
     expect_equal(co1Tree1$tip.label, labCo1)     # check labels
     expect_equal(co1Tree1$edge.length, target_edgeLength)  # check edge lengths
     expect_equal(co1Tree1$node.label, c("", "0.93", "0.88", "0.99", "1.00", "0.76", "1.00", "1.00"))
     ## Tree 2
     co1Tree2 <- co1[[2]]
+    expect_equal(typeof(co1Tree2$edge), "integer")
     expect_equal(co1Tree2$tip.label, labCo1)     # check labels
     expect_equal(co1Tree2$edge.length, target_edgeLength)  # check edge lengths
     expect_equal(co1Tree2$node.label, NULL)
@@ -97,6 +96,7 @@ test_that("test option simplify", {
     ## Check option simplify
     co1 <- read_nexus_phylo(file=co1File, simplify=TRUE)
     target_edgeLength <- unname(eLco1[paste(co1$edge[,1], co1$edge[,2], sep="-")])
+    expect_equal(typeof(co1$edge), "integer")
     expect_true(inherits(co1, "phylo"))        # make sure there is only one tree
     expect_equal(co1$tip.label, labCo1)     # check labels
     expect_equal(co1$edge.length, target_edgeLength)  # check edge lengths
@@ -109,6 +109,8 @@ test_that("readNCL can handle multi line files", {
     ## load correct representation and make sure that the trees read
     ## match it
     ml <- ape::read.nexus(file = multiLinesFile)
+    expect_equal(typeof(multiLines[[1]]$edge), "integer")
+    expect_equal(typeof(multiLines[[2]]$edge), "integer")
     expect_equal(multiLines[[1]], ml[[1]])
     expect_equal(multiLines[[2]], ml[[2]])
     rm(ml)
@@ -123,6 +125,7 @@ eLnew <- c(1, 2, 3, 4)
 test_that("check.node.labels='drop' with readNCL", {
     newTr <- read_newick_phylo(file=newick)
     expect_equal(newTr$tip.label, labNew)
+    expect_equal(typeof(newTr$edge), "integer")
     expect_equal(newTr$edge.length, eLnew)
     expect_equal(newTr$node.label, c("yy", "xx"))
 })
@@ -130,19 +133,50 @@ test_that("check.node.labels='drop' with readNCL", {
 ## weird files
 test_that("weird files",{
     tr <- read_newick_phylo(file=file.path(pth_nw_good, "Gudrun.tre"))
+    expect_equal(typeof(tr$edge), "integer")
     expect_equal(length(tr$tip.label), 68)
     expect_equal(tr$Nnode, 42)
-    simple_tree <- read_newick_phylo(file=file.path(pth_nw_good, "simpleTree.tre"))
+})
+
+test_that("simple tree with singletons",  {
+    expect_warning(simple_tree <- read_newick_phylo(file=file.path(pth_nw_good, "simpleTree.tre")),
+                   "fur")
+    expect_equal(typeof(simple_tree$edge), "integer")
     expect_equal(simple_tree$tip.label, c("A_1", "B__2", "C", "D"))
     expect_equal(simple_tree$node.label, c("mammals", "cats", "dogs"))
-    sing_tree <- read_newick_phylo(file=file.path(pth_nw_good, "singTree.tre"))
+})
+
+test_that("tree with singletons", {
+    expect_warning(sing_tree <- read_newick_phylo(file=file.path(pth_nw_good, "singleton_tree.tre")),
+                   "cats")
+    expect_equal(typeof(sing_tree$edge), "integer")
+    expect_true(is.null(sing_tree$edge.length))
     expect_equal(sing_tree$tip.label, c("A", "B", "C", "D", "E"))
     expect_equal(sing_tree$node.label, c("life", "tetrapods", "dogs", "mammals"))
+})
+
+test_that("tree with singletons", {
+    expect_warning(sing_tree <- read_newick_phylo(file=file.path(pth_nw_good, "singleton_with_edge_length.tre")),
+                   "cats")
+    expect_equal(typeof(sing_tree$edge), "integer")
+    expect_equal(length(sing_tree$edge.length), nrow(sing_tree$edge))
+    expect_equal(sing_tree$tip.label, c("A", "B", "C", "D", "E"))
+    expect_equal(sing_tree$node.label, c("life", "tetrapods", "dogs", "mammals"))
+})
+
+test_that("tree with tip and node labels", {
     tr1 <- read_newick_phylo(file=file.path(pth_nw_good, "tree1.tre"))
+    expect_equal(typeof(tr1$edge), "integer")
+    expect_equal(length(tr1$edge.length), nrow(tr1$edge))
     expect_equal(tr1$tip.label, c("A", "B", "C", "D"))
     expect_equal(tr1$node.label, c("F", "E"))
     expect_equal(tr1$edge.length, seq(.1, .5, by=.1))
+})
+
+test_that("tree with tip and node labels 2", {
     tr2 <- read_newick_phylo(file=file.path(pth_nw_good, "tree2.tre"))
+    expect_equal(typeof(tr2$edge), "integer")
+    expect_true(is.null(tr2$edge.length))
     expect_equal(tr2$tip.label, LETTERS[1:4])
     expect_equal(tr2$node.label, "E")
     expect_equal(tr2$Nnode, 1)
@@ -156,6 +190,7 @@ test_that("file with missing edge lengths (default behavior)", {
     expect_warning(tr <- read_newick_phylo(file = file.path(pth_nw_good, "missing_edge_lengths.tre")),
                    "All removed")
     expect_true(is.null(tr$edge.length))
+    expect_equal(typeof(tr$edge), "integer")
 })
 
 test_that("file with missing edge lengths specify missing value", {
@@ -163,6 +198,7 @@ test_that("file with missing edge lengths specify missing value", {
                                            missing_edge_length = -99),
                    "replaced by")
     expect_true(sum(tr$edge.length == -99) > 0)
+    expect_equal(typeof(tr$edge), "integer")
 })
 
 test_that("missing_edge_length is a single numeric value", {
@@ -187,29 +223,30 @@ test_that("missing_edge_length is a single numeric value", {
 context("Tree with subset of taxa listed in TAXA block")
 
 test_that("taxa subset", {
-              tr <- read_nexus_phylo(file = taxsub)
-              ncl <- rncl(file = taxsub, file.format = "nexus")
-              expect_equal(ncl$trees[1], "(2,((3,1),(5,4)))")
-              expect_equal(ncl$trees[2], "(2:6,((3:2,1:1):4,(5:10,4:9):7):3)")
-              expect_equal(ncl$trees[3], "(2,(3,(6,(5,4))))")
-              expect_equal(ncl$trees[4], "(5,(4,(2,(3,(1,6)))))")
-              expect_equal(tr[[1]]$edge, cbind(c(6, 8, 8, 9, 9, 6, 7, 7),
-                                               (1:9)[-6]))
-              expect_equal(tr[[2]]$edge, cbind(c(6, 8, 8, 9, 9, 6, 7, 7),
-                                               (1:9)[-6]))
-              expect_equal(tr[[3]]$edge, cbind(c(6, 7, 8, 9, 9, 6, 7, 8),
-                                               (1:9)[-6]))
-              expect_equal(tr[[4]]$edge, cbind(c(7, 8, 9, 10, 11, 11, 7, 8, 9, 10),
-                                               (1:11)[-7]))
-              expect_equal(tr[[2]]$edge.length,
-                           c(6, 2, 1, 10, 9, 3, 4, 7))
-              expect_equal(tr[[1]]$edge.length, NULL)
-              expect_equal(tr[[1]]$tip.label, c("porifera", "ctenophora", "cnidaria", "deuterostomia", "protostomia"))
-              expect_equal(tr[[2]]$tip.label, c("porifera", "ctenophora", "cnidaria", "deuterostomia", "protostomia"))
-              expect_equal(tr[[3]]$tip.label, c("porifera", "ctenophora", "xeno", "deuterostomia", "protostomia"))
-              expect_equal(tr[[4]]$tip.label, c("deuterostomia", "protostomia", "porifera", "ctenophora", "cnidaria", "xeno"))
-              expect_equal(names(tr), paste0("hyp", 1:4))
-          })
+    tr <- read_nexus_phylo(file = taxsub)
+    ncl <- rncl(file = taxsub, file.format = "nexus")
+    expect_equal(ncl$trees[1], "(2,((3,1),(5,4)))")
+    expect_equal(ncl$trees[2], "(2:6,((3:2,1:1):4,(5:10,4:9):7):3)")
+    expect_equal(ncl$trees[3], "(2,(3,(6,(5,4))))")
+    expect_equal(ncl$trees[4], "(5,(4,(2,(3,(1,6)))))")
+    expect_equal(typeof(tr[[1]]$edge), "integer")
+    expect_equal(tr[[1]]$edge, cbind(c(6, 8, 8, 9, 9, 6, 7, 7),
+                               (1:9)[-6]))
+    expect_equal(tr[[2]]$edge, cbind(c(6, 8, 8, 9, 9, 6, 7, 7),
+                               (1:9)[-6]))
+    expect_equal(tr[[3]]$edge, cbind(c(6, 7, 8, 9, 9, 6, 7, 8),
+                               (1:9)[-6]))
+    expect_equal(tr[[4]]$edge, cbind(c(7, 8, 9, 10, 11, 11, 7, 8, 9, 10),
+                               (1:11)[-7]))
+    expect_equal(tr[[2]]$edge.length,
+                 c(6, 2, 1, 10, 9, 3, 4, 7))
+    expect_equal(tr[[1]]$edge.length, NULL)
+    expect_equal(tr[[1]]$tip.label, c("porifera", "ctenophora", "cnidaria", "deuterostomia", "protostomia"))
+    expect_equal(tr[[2]]$tip.label, c("porifera", "ctenophora", "cnidaria", "deuterostomia", "protostomia"))
+    expect_equal(tr[[3]]$tip.label, c("porifera", "ctenophora", "xeno", "deuterostomia", "protostomia"))
+    expect_equal(tr[[4]]$tip.label, c("deuterostomia", "protostomia", "porifera", "ctenophora", "cnidaria", "xeno"))
+    expect_equal(names(tr), paste0("hyp", 1:4))
+})
 
 ############################################################################
 ## Test roundtrip with Myrmecus file                                      ##
@@ -218,9 +255,10 @@ test_that("taxa subset", {
 context("Compare output from ape read file and phylobase")
 
 test_that("compare read.nexus and read_nexus_phylo", {
-            tr_ape <- ape::read.nexus(file = treeDiscDt)
-            tr_ph4 <- read_nexus_phylo(file = treeDiscDt)
-            expect_equal(tr_ape, tr_ph4)
+    tr_ape <- ape::read.nexus(file = treeDiscDt)
+    tr_ph4 <- read_nexus_phylo(file = treeDiscDt)
+    expect_equal(typeof(tr_ph4$edge), "integer")
+    expect_equal(tr_ape, tr_ph4)
 })
 
 ############################################################################
@@ -230,21 +268,23 @@ test_that("compare read.nexus and read_nexus_phylo", {
 context("test spacesAsUnderscores")
 
 test_that("spacesAsUnderscores is TRUE",  {
-              ncl <- rncl(file = tr_under, file.format = "nexus", spacesAsUnderscores = TRUE)
-              expect_true(any(grepl("\\_", ncl$taxaNames)))
-              expect_true(all(sapply(ncl$taxonLabelVector, function(x) any(grepl("_", x)))))
-              expect_true(any(grepl("_", ncl$charLabels)))
-              expect_true(any(grepl("_", ncl$stateLabels)))
-          })
+    ncl <- rncl(file = tr_under, file.format = "nexus", spacesAsUnderscores = TRUE)
+    expect_equal(typeof(ncl$parentVector[[1]]), "integer")
+    expect_true(any(grepl("\\_", ncl$taxaNames)))
+    expect_true(all(sapply(ncl$taxonLabelVector, function(x) any(grepl("_", x)))))
+    expect_true(any(grepl("_", ncl$charLabels)))
+    expect_true(any(grepl("_", ncl$stateLabels)))
+})
 
 
 test_that("spacesAsUnderscores is FALSE",  {
-              ncl <- rncl(file = tr_under, file.format = "nexus", spacesAsUnderscores = FALSE)
-              expect_false(any(grepl("\\_", ncl$taxaNames)))
-              expect_false(all(sapply(ncl$taxonLabelVector, function(x) any(grepl("_", x)))))
-              expect_false(any(grepl("_", ncl$charLabels)))
-              expect_false(any(grepl("_", ncl$stateLabels)))
-          })
+    ncl <- rncl(file = tr_under, file.format = "nexus", spacesAsUnderscores = FALSE)
+    expect_equal(typeof(ncl$parentVector[[1]]), "integer")
+    expect_false(any(grepl("\\_", ncl$taxaNames)))
+    expect_false(all(sapply(ncl$taxonLabelVector, function(x) any(grepl("_", x)))))
+    expect_false(any(grepl("_", ncl$charLabels)))
+    expect_false(any(grepl("_", ncl$stateLabels)))
+})
 
 ############################################################################
 ## Test on non - existing file                                            ##

@@ -1,4 +1,4 @@
-// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
+// -*- mode: C++; -*-
 
 #include <Rcpp.h>
 #include "ncl/nxsmultiformat.h"
@@ -202,7 +202,7 @@ Rcpp::List RNCL (SEXP params, SEXP paramsVecR) {
 		    for (unsigned k = 0; k < nTrees; k++) {
 
 			std::vector<std::string> taxonLabelVector; //Index of the parent. 0 means no parent.
-			std::vector<unsigned> parentVector;        //Index of the parent. 0 means no parent.
+			std::vector<int> parentVector;        //Index of the parent. 0 means no parent.
 			std::vector<double> branchLengthVector;
                         std::vector<std::string> nodeLabelVector;
 

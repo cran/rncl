@@ -2,6 +2,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/bfcjqt83esp0nnak)](https://ci.appveyor.com/project/fmichonneau/rncl)
 [![Coverage Status](https://coveralls.io/repos/fmichonneau/rncl/badge.svg)](https://coveralls.io/r/fmichonneau/rncl)
 ![](http://cranlogs.r-pkg.org/badges/rncl)
+[![Research software impact](http://depsy.org/api/package/cran/rncl/badge.svg)](http://depsy.org/package/r/rncl)
 
 # An R interface to the NEXUS Class Library
 
@@ -19,7 +20,7 @@ create objects of class `phylo4` or `phylo4d`.
 The package however provides two functions for users: `read_nexus_phylo()` and
 `read_newick_phylo()`. They read NEXUS and Newick files respectively, and return
 (a valid) `phylo` or `multiPhylo` object from the package
-[ape](http://cran.r-project.org/package=ape). These functions differ from those
+[ape](https://cran.r-project.org/package=ape). These functions differ from those
 found in ape (respectively `read.tree` and `read.nexus`) as `rncl` functions can
 read trees with singletons, and missing branch lengths. However, `rncl` adheres
 to the NEXUS standards and only accepts tip labels without white spaces and tip

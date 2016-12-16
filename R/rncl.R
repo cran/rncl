@@ -173,7 +173,7 @@ rncl <- function(file, file.format = c("nexus", "newick"),
 ## Returns the edge matrix from the parentVector (the i^th element is
 ## the descendant element of node i)
 get_edge_matrix <- function(parentVector) {
-    edgeMat <- cbind(parentVector, 1:length(parentVector))
+    edgeMat <- cbind(parentVector, seq_along(parentVector))
     rootNd <- edgeMat[which(edgeMat[, 1] == 0), 2]
     edgeMat <- edgeMat[-which(edgeMat[, 1] == 0), ]
     attr(edgeMat, "root") <- rootNd
@@ -207,7 +207,7 @@ build_raw_phylo <- function(ncl, missing_edge_length) {
             attr(edgeMat, "root") <- NULL
             attr(edgeMat, "dimnames") <- NULL
 
-            edgeLgth <- get_edge_length(ncl$branchLength[[i]], ncl$parentVector[[i]])
+            edgeLgth <- get_edge_length(ncl$branchLengthVector[[i]], ncl$parentVector[[i]])
 
             tipLbl <- ncl$taxonLabelVector[[i]]
 
@@ -256,7 +256,7 @@ build_phylo <- function(ncl, simplify=FALSE, missing_edge_length) {
     trees <- build_raw_phylo(ncl, missing_edge_length)
     if (!is.null(trees)) {
         trees <- lapply(trees, function(tr) {
-                            if (any(tabulate(tr$edge[, 1]) == 1)) {
+                            if (any(tabulate(tr$edge[, 1]) == 1L)) {
                                 tr <- collapse_singles(tr)
                             }
                             class(tr) <- "phylo"
@@ -293,20 +293,6 @@ build_phylo <- function(ncl, simplify=FALSE, missing_edge_length) {
 ##' @note \code{make_phylo} will soon be deprecated, use
 ##' \code{read_nexus_phylo} or \code{read_newick_phylo} instead.
 ##' @export
-
-make_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...) {
-    .Deprecated(msg = paste0("Use ", sQuote("read_nexus_phylo"),
-                " or ", sQuote("read_newick_phylo"), " instead"))
-    internal_make_phylo(file = file, simplify=simplify, missing_edge_length = missing_edge_length, ...)
-}
-
-internal_make_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...) {
-    ncl <- rncl(file=file, ...)
-    build_phylo(ncl, simplify=simplify, missing_edge_length = missing_edge_length)
-}
-
-##' @rdname read_nexus_phylo
-##' @export
 read_nexus_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...) {
     internal_make_phylo(file=file, simplify=simplify, file.format="nexus",
                missing_edge_length = missing_edge_length, ...)
@@ -317,4 +303,17 @@ read_nexus_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...
 read_newick_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...) {
     internal_make_phylo(file=file, simplify=simplify, file.format="newick",
                missing_edge_length = missing_edge_length, ...)
+}
+
+internal_make_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...) {
+    ncl <- rncl(file=file, ...)
+    build_phylo(ncl, simplify=simplify, missing_edge_length = missing_edge_length)
+}
+
+##' @rdname read_nexus_phylo
+##' @export
+make_phylo <- function(file, simplify=FALSE, missing_edge_length = NA, ...) {
+    .Deprecated(msg = paste0("Use ", sQuote("read_nexus_phylo"),
+                " or ", sQuote("read_newick_phylo"), " instead"))
+    internal_make_phylo(file = file, simplify=simplify, missing_edge_length = missing_edge_length, ...)
 }
